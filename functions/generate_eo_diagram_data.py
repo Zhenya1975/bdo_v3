@@ -4,6 +4,7 @@ from initial_values.initial_values import sap_system_status_ban_list, sap_user_s
 from datetime import datetime
 # from app import app
 import sqlite3
+# from app import app
 
 db = extensions.db
 
@@ -18,6 +19,7 @@ def generate_eo_diagram_data():
   - создается выборка с записями, которые вышли их эксплуатации в текущем году. Эта выборка мерджится справа от предыдущей. \n
   результирующий датафрейм конкатинируется снизу к предыдущему году.\n
   """
+  # with app.app_context():
   con = sqlite3.connect("database/datab.db")
   # sql = "SELECT * FROM eo_DB JOIN be_DB"
   sql = "SELECT \
@@ -83,6 +85,7 @@ def generate_eo_diagram_data():
   result_diagram_data_df = pd.DataFrame()
 
   for year, year_data in year_dict.items():
+    print(year)
     year_first_date = datetime.strptime(year_data['period_start'], '%d.%m.%Y')
     year_last_date = datetime.strptime(year_data['period_end'], '%d.%m.%Y')
 
@@ -231,6 +234,8 @@ def generate_eo_diagram_data():
 
     
     # result_diagram_data_df.to_csv('temp_data/result_diagram_data_df.csv')
+  
   result_diagram_data_df["operation_start_date"] = result_diagram_data_df["operation_start_date"].dt.strftime("%d.%m.%Y")  
   result_diagram_data_df["evaluated_operation_finish_date"] = result_diagram_data_df["evaluated_operation_finish_date"].dt.strftime("%d.%m.%Y")  
-  result_diagram_data_df.to_excel('downloads/eo_calendar_data_v2.xlsx')
+  result_diagram_data_df.to_csv('downloads/eo_calendar_data_v2.csv')
+  # result_diagram_data_df.to_excel('downloads/eo_calendar_data_v2.xlsx')

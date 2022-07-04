@@ -252,10 +252,12 @@ def read_be_eo_xlsx():
   excel_master_eo_df['evaluated_operation_finish_date'] = pd.to_datetime(excel_master_eo_df['evaluated_operation_finish_date'])
   
   excel_master_eo_df['operation_start_date'] = pd.to_datetime(excel_master_eo_df['operation_start_date'])
-
+  
+  excel_master_eo_df['sap_planned_finish_operation_date'] = pd.to_datetime(excel_master_eo_df['sap_planned_finish_operation_date'])
+  
   be_master_data = pd.merge(be_eo_data, excel_master_eo_df, on = 'eo_code', how = 'left')
   # 
-  be_master_data = be_master_data.loc[:, ['be_eo_data_row_no', 'eo_code', 'operation_status', 'operation_start_date', 'sap_system_status', 'sap_user_status', 'reported_operation_finish_date', 'reported_operation_status', 'evaluated_operation_finish_date']]
+  be_master_data = be_master_data.loc[:, ['be_eo_data_row_no', 'eo_code', 'operation_status', 'operation_start_date', 'sap_system_status', 'sap_user_status','sap_planned_finish_operation_date', 'reported_operation_finish_date', 'reported_operation_status', 'evaluated_operation_finish_date']]
   
   # выборка записией во статусом "консервация" из мастер-данных
   be_master_data_cons_sub_data = be_master_data.loc[be_master_data['sap_user_status'].isin(sap_user_status_cons_status_list)]
