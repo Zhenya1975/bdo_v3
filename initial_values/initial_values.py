@@ -4,3 +4,5 @@ be_data_columns_to_master_columns = {"№пп": "be_eo_data_row_no", "ЕО SAP":
 
 sap_system_status_ban_list = ['МТКУ НЕАК УСТН', 'МТКУ ПВЕО', 'МТКУ УСТН']
 sap_user_status_ban_list = ['КОНС СИНХ', 'КОНС', 'ВРНД НПВЭ СИНХ']
+sap_user_status_cons_status_list = ['КОНС СИНХ', 'КОНС']
+be_data_cons_status_list = ["Консервация", "консервация"]

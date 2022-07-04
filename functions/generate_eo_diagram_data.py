@@ -233,4 +233,4 @@ def generate_eo_diagram_data():
     # result_diagram_data_df.to_csv('temp_data/result_diagram_data_df.csv')
   result_diagram_data_df["operation_start_date"] = result_diagram_data_df["operation_start_date"].dt.strftime("%d.%m.%Y")  
   result_diagram_data_df["evaluated_operation_finish_date"] = result_diagram_data_df["evaluated_operation_finish_date"].dt.strftime("%d.%m.%Y")  
-  result_diagram_data_df.to_excel('downloads/eo_calendar_data_v2.xlsx', index = False)
+  result_diagram_data_df.to_excel('downloads/eo_calendar_data_v2.xlsx')

@@ -3,6 +3,8 @@ from extensions import extensions
 from models.models import Eo_DB, Be_DB, LogsDB, Eo_data_conflicts, Eo_candidatesDB
 from initial_values.initial_values import be_data_columns_to_master_columns
 from datetime import datetime
+from initial_values.initial_values import sap_user_status_cons_status_list, be_data_cons_status_list, sap_system_status_ban_list
+import sqlite3
 
 db = extensions.db
 
@@ -123,6 +125,7 @@ def read_be_eo_xlsx():
   try:
     be_eo_raw_data = pd.read_excel('uploads/be_eo_data.xlsx', sheet_name='be_eo_data', index_col = False)
     be_eo_data = be_eo_raw_data.rename(columns=be_data_columns_to_master_columns)
+    be_eo_data['eo_code'] = be_eo_data['eo_code'].astype(str)
   except Exception as e:
     print("не удалось прочитать файл uploads/be_eo_data.xlsx. Ошибка: ", e)
     log_data_new_record = LogsDB(log_text = f"не удалось прочитать файл uploads/be_eo_data.xlsx. Ошибка: , {e})", log_status = "new")
@@ -187,13 +190,86 @@ def read_be_eo_xlsx():
             infodata_sender_email, 
             infodata_sender_email_date
           )
-        if 'reported_operation_finish_date' in be_eo_column_list:
-          be_data_reported_operation_finish_date_raw = getattr(row, "reported_operation_finish_date")
-          be_data_reported_operation_finish_datetime = read_date(be_data_reported_operation_finish_date_raw, be_data_eo_code)
-          eo_master_data.reported_operation_finish_date = be_data_reported_operation_finish_datetime
-          db.session.commit()  
+      if 'reported_operation_finish_date' in be_eo_column_list:
+        be_data_reported_operation_finish_date_raw = getattr(row, "reported_operation_finish_date")
+        be_data_reported_operation_finish_datetime = read_date(be_data_reported_operation_finish_date_raw, be_data_eo_code)
+        eo_master_data.reported_operation_finish_date = be_data_reported_operation_finish_datetime
+        db.session.commit()  
 
-        if 'operation_status' in be_eo_column_list:
-          operation_status = str(getattr(row, "operation_status"))
-          eo_master_data.reported_operation_status = operation_status
-          db.session.commit()
+      if 'operation_status' in be_eo_column_list:
+        operation_status = str(getattr(row, "operation_status"))
+        eo_master_data.reported_operation_status = operation_status
+        db.session.commit()
+
+  # джойним загруженую таблицу с данными из мастер-дата
+
+
+  con = sqlite3.connect("database/datab.db")
+  # sql = "SELECT * FROM eo_DB JOIN be_DB"
+  sql = "SELECT \
+  eo_DB.be_code, \
+  be_DB.be_description, \
+  eo_DB.eo_class_code, \
+  eo_class_DB.eo_class_description, \
+  models_DB.eo_model_name, \
+  models_DB.eo_category_spec, \
+  eo_DB.eo_model_id, \
+  eo_DB.sap_model_name, \
+  eo_DB.sap_maker, \
+  eo_DB.maker, \
+  eo_DB.teh_mesto, \
+  eo_DB.gar_no, \
+  eo_DB.sap_gar_no, \
+  eo_DB.eo_code, \
+  eo_DB.eo_description, \
+  eo_DB.head_type, \
+  eo_DB.operation_start_date, \
+  eo_DB.reported_operation_start_date, \
+  eo_DB.expected_operation_period_years, \
+  eo_DB.expected_operation_finish_date, \
+  eo_DB.sap_planned_finish_operation_date, \
+  eo_DB.operation_finish_date_calc, \
+  eo_DB.operation_finish_date_sap_upd, \
+  eo_DB.expected_operation_status_code, \
+  eo_DB.sap_system_status, \
+  eo_DB.sap_user_status, \
+  eo_DB.finish_date_delta, \
+  eo_DB.reported_operation_status, \
+  eo_DB.reported_operation_status_date, \
+  eo_DB.evaluated_operation_finish_date \
+  FROM eo_DB \
+  LEFT JOIN models_DB ON eo_DB.eo_model_id = models_DB.eo_model_id \
+  LEFT JOIN be_DB ON eo_DB.be_code = be_DB.be_code \
+  LEFT JOIN eo_class_DB ON eo_DB.eo_class_code = eo_class_DB.eo_class_code \
+  LEFT JOIN operation_statusDB ON eo_DB.expected_operation_status_code = operation_statusDB.operation_status_code"
+
+
+    
+  excel_master_eo_df = pd.read_sql_query(sql, con)
+  excel_master_eo_df.sort_values(['be_code','teh_mesto'], inplace=True)
+  date_time_plug = '31/12/2099 23:59:59'
+  date_time_plug = datetime.strptime(date_time_plug, '%d/%m/%Y %H:%M:%S')
+  excel_master_eo_df['evaluated_operation_finish_date'] = pd.to_datetime(excel_master_eo_df['evaluated_operation_finish_date'])
+  
+  excel_master_eo_df['operation_start_date'] = pd.to_datetime(excel_master_eo_df['operation_start_date'])
+
+  be_master_data = pd.merge(be_eo_data, excel_master_eo_df, on = 'eo_code', how = 'left')
+  # 
+  be_master_data = be_master_data.loc[:, ['be_eo_data_row_no', 'eo_code', 'operation_status', 'operation_start_date', 'sap_system_status', 'sap_user_status', 'reported_operation_finish_date', 'reported_operation_status', 'evaluated_operation_finish_date']]
+  
+  # выборка записией во статусом "консервация" из мастер-данных
+  be_master_data_cons_sub_data = be_master_data.loc[be_master_data['sap_user_status'].isin(sap_user_status_cons_status_list)]
+  
+  # исключаем записи со статусом МТКУ
+  be_master_data_cons_sub_data = be_master_data_cons_sub_data.loc[~be_master_data_cons_sub_data['sap_system_status'].isin(sap_system_status_ban_list)]
+  indexes = list(be_master_data_cons_sub_data.index.values)
+  be_master_data.loc[indexes, ['master_data_cons_status']] = "master_data_cons"
+
+  # выборка записей из загруженного файла со статусом "консервация"
+  be_cons_sub_data = be_master_data.loc[be_master_data['reported_operation_status'].isin(be_data_cons_status_list)]
+  indexes = list(be_cons_sub_data.index.values)
+  be_master_data.loc[indexes, ['be_data_cons_status']] = "be_data_cons"
+  # кол-во на конец года
+  
+  be_master_data.to_csv('temp_data/be_master_data.csv')
+      
