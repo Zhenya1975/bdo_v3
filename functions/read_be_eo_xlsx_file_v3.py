@@ -145,11 +145,45 @@ def read_be_eo_xlsx():
   infodata_sender_email = be_data_info.loc[be_data_info.index[0], ['sender_email']][0]
   infodata_sender_email_date = be_data_info.loc[be_data_info.index[0], ['e-mail_date']][0]
 
-
+  # обновляем в базе поля со статусами конфликтов
+  
+  
+  con = sqlite3.connect("database/datab.db")
+  cursor = con.cursor()
+  # sql = "SELECT * FROM eo_DB JOIN be_DB"
+  sql = "SELECT \
+  eo_DB.eo_code, \
+  eo_DB.operation_finish_date_sap_upd, \
+  eo_DB.reported_operation_finish_date, \
+  eo_DB.operation_finish_date_conflict \
+  FROM eo_DB"
+  master_eo_temp_df = pd.read_sql_query(sql, con)
+  date_time_plug = '31/12/2099 23:59:59'
+  date_time_plug = datetime.strptime(date_time_plug, '%d/%m/%Y %H:%M:%S')
+  master_eo_temp_df['operation_finish_date_sap_upd'] = pd.to_datetime(master_eo_temp_df['operation_finish_date_sap_upd'])
+  
+  master_eo_temp_df['reported_operation_finish_date'] = pd.to_datetime(master_eo_temp_df['reported_operation_finish_date'])
+  master_eo_temp_df['reported_operation_finish_date'].fillna(date_time_plug, inplace = True)
+  master_eo_temp_temp_df = master_eo_temp_df.loc[master_eo_temp_df['reported_operation_finish_date']!=date_time_plug]
+  master_eo_temp_temp_df = master_eo_temp_temp_df.copy()
+  master_eo_temp_temp_df['finish_date_delta'] = (master_eo_temp_temp_df['reported_operation_finish_date'] - master_eo_temp_temp_df['operation_finish_date_sap_upd']).dt.total_seconds()
+  
+  # master_eo_temp_temp_df.to_csv('temp_data/master_eo_temp_temp_df.csv')
+  
+  master_eo_temp_temp_temp_df = master_eo_temp_temp_df.loc[master_eo_temp_temp_df['finish_date_delta'] !=0]
+  update_sql = f"UPDATE eo_DB SET operation_finish_date_conflict =NULL ;"
+  cursor.execute(update_sql)
+  con.commit()
+  for row in master_eo_temp_temp_temp_df.itertuples():
+    eo_code = getattr(row, 'eo_code')
+    update_sql = f"UPDATE eo_DB SET operation_finish_date_conflict ='дата завершения эксплуатации отличается' WHERE eo_code='{eo_code}';"
+    cursor.execute(update_sql)
+    con.commit()
   
   # предыдущие данные в лог файле ресетим
   log_data_updated = LogsDB.query.update(dict(log_status='old'))
   db.session.commit()
+  
   be_eo_column_list = list(be_eo_data.columns)
   ################################################ чтение загруженного файла ###############################################
 
@@ -248,6 +282,7 @@ def read_be_eo_xlsx():
   eo_DB.finish_date_delta, \
   eo_DB.reported_operation_status, \
   eo_DB.reported_operation_status_date, \
+  eo_DB.operation_finish_date_conflict, \
   eo_DB.evaluated_operation_finish_date \
   FROM eo_DB \
   LEFT JOIN models_DB ON eo_DB.eo_model_id = models_DB.eo_model_id \
@@ -269,7 +304,7 @@ def read_be_eo_xlsx():
   
   be_master_data = pd.merge(be_eo_data, excel_master_eo_df, on = 'eo_code', how = 'left')
   # 
-  be_master_data = be_master_data.loc[:, ['be_eo_data_row_no', 'eo_code', 'operation_status', 'operation_start_date', 'sap_system_status', 'sap_user_status','sap_planned_finish_operation_date', 'reported_operation_finish_date', 'reported_operation_status', 'evaluated_operation_finish_date']]
+  be_master_data = be_master_data.loc[:, ['be_eo_data_row_no', 'eo_code', 'operation_status', 'operation_start_date', 'sap_system_status', 'sap_user_status','sap_planned_finish_operation_date', 'reported_operation_finish_date','operation_finish_date_conflict', 'reported_operation_status', 'evaluated_operation_finish_date']]
   
   # выборка записией во статусом "консервация" из мастер-данных
   be_master_data_cons_sub_data = be_master_data.loc[be_master_data['sap_user_status'].isin(sap_user_status_cons_status_list)]
@@ -286,4 +321,6 @@ def read_be_eo_xlsx():
   # кол-во на конец года
   
   be_master_data.to_csv('temp_data/be_master_data.csv')
+  
+  cursor.close()
       

@@ -124,7 +124,7 @@ class Eo_DB(db.Model):
   finish_date_delta = db.Column(db.Float)
   reported_operation_status_code = db.Column(db.String, db.ForeignKey('operation_statusDB.operation_status_code'))
   reported_operation_status_date = db.Column(db.DateTime)
-  operation_finish_date_conflict = db.Column(db.String)
+  operation_finish_date_conflict = db.Column(db.String) # если даты reported и operation_finish_date_sap_upd отличаются, то пишем сюда текст с конфликтом
   evaluated_operation_finish_date = db.Column(db.DateTime)  # срок завершения эксплуатации с учетом данных из бизнес-единиц
   
   sap_system_status = db.Column(db.String)
@@ -136,7 +136,6 @@ class Eo_DB(db.Model):
   age_date = db.Column(db.DateTime)
   age_calc_operation_status = db.Column(db.Integer)
 
-  
   
   conflict_data = db.relationship('Eo_data_conflicts', backref='conflict_data')
   logs_data = db.relationship('LogsDB', backref='logs_data')
