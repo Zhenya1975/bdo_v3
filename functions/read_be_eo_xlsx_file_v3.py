@@ -10,6 +10,8 @@ db = extensions.db
 
 be_data_columns_to_master_columns = be_data_columns_to_master_columns
 
+date_time_plug = '1.1.2199'
+date_time_plug = datetime.strptime(date_time_plug, '%d.%m.%Y')
 
 def create_conflict(be_eo_data_row_no, be_data_eo_code, eo_conflict_field, eo_conflict_field_current_master_data, eo_conflict_field_uploaded_data, infodata_filename, infodata_sender_email, infodata_sender_email_date):
   
@@ -107,8 +109,7 @@ def read_date(date_input, eo_code):
       return date_output
     except Exception as e:
       print(f"eo_code: {eo_code}. Не удалось сохранить в дату '{date_input}, тип: {type(date_input)}'. Ошибка: ", e)
-      date_output = datetime.strptime('1.1.2199', '%d.%m.%Y')
-      return date_output
+
   
   elif "nat" in str(type(date_input)) or "NaT" in str(type(date_input)) or "float" in str(type(date_input)):
     date_output = datetime.strptime('1.1.2199', '%d.%m.%Y')
@@ -144,6 +145,8 @@ def read_be_eo_xlsx():
   infodata_sender_email = be_data_info.loc[be_data_info.index[0], ['sender_email']][0]
   infodata_sender_email_date = be_data_info.loc[be_data_info.index[0], ['e-mail_date']][0]
 
+
+  
   # предыдущие данные в лог файле ресетим
   log_data_updated = LogsDB.query.update(dict(log_status='old'))
   db.session.commit()
@@ -193,6 +196,14 @@ def read_be_eo_xlsx():
       if 'reported_operation_finish_date' in be_eo_column_list:
         be_data_reported_operation_finish_date_raw = getattr(row, "reported_operation_finish_date")
         be_data_reported_operation_finish_datetime = read_date(be_data_reported_operation_finish_date_raw, be_data_eo_code)
+        be_data_reported_operation_finish_date = be_data_reported_operation_finish_datetime.date()
+        
+        operation_finish_date_sap_upd_date = eo_master_data.operation_finish_date_sap_upd
+        print(type(operation_finish_date_sap_upd_date))
+        # operation_finish_date_sap_upd_date = eo_master_data.operation_finish_date_sap_upd.date()
+        # if be_data_reported_operation_finish_date != operation_finish_date_sap_upd_date:
+        #   print('даты не равны')
+        
         eo_master_data.reported_operation_finish_date = be_data_reported_operation_finish_datetime
         db.session.commit()  
 

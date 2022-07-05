@@ -103,12 +103,11 @@ def eo_data_calculation():
   date_time_plug = datetime.strptime(date_time_plug, '%d/%m/%Y %H:%M:%S')
   master_eo_df['operation_finish_date_sap_upd_temp'] = master_eo_df['sap_planned_finish_operation_date']
   master_eo_df['operation_finish_date_sap_upd_temp'].fillna(date_time_plug, inplace = True)
-  # print(master_eo_df['operation_finish_date_sap_upd_temp'])
-  # master_eo_df_temp = master_eo_df.loc[master_eo_df['operation_finish_date_sap_upd_temp']==date_time_plug]
-  # indexes = list(master_eo_df_temp.index.values)
-  # print(master_eo_df.loc[indexes, ['operation_finish_date_calc']])
+  
 
-  # master_eo_df.loc[indexes, ['operation_finish_date_sap_upd']] = master_eo_df.loc[indexes, ['operation_finish_date_calc']]
+  master_eo_df_temp = master_eo_df.loc[master_eo_df['operation_finish_date_sap_upd_temp']==date_time_plug]
+  indexes = list(master_eo_df_temp.index.values)
+  
   # рассчитываем отклонение приведенной даты сап от даты reported date
   master_eo_df['reported_operation_finish_date'].fillna(date_time_plug, inplace = True)
   master_eo_df_reported_dates = master_eo_df.loc[master_eo_df['reported_operation_finish_date'] != date_time_plug]
@@ -152,12 +151,13 @@ def eo_data_calculation():
     else:
       operation_finish_date_sap_upd = sap_planned_finish_operation_date
     operation_finish_date_sap_upd_sql = f"UPDATE eo_DB SET operation_finish_date_sap_upd='{operation_finish_date_sap_upd}' WHERE eo_code='{eo_code}';"   
+   
     cursor.execute(operation_finish_date_sap_upd_sql)
     con.commit()    
-    finish_date_delta = getattr(row, "finish_date_delta")
-    finish_date_delta_sql = f"UPDATE eo_DB SET finish_date_delta = {finish_date_delta} WHERE eo_code='{eo_code}'"
-    cursor.execute(finish_date_delta_sql)
-    con.commit() 
+    # finish_date_delta = getattr(row, "finish_date_delta")
+    # finish_date_delta_sql = f"UPDATE eo_DB SET finish_date_delta = {finish_date_delta} WHERE eo_code='{eo_code}'"
+    # cursor.execute(finish_date_delta_sql)
+    # con.commit() 
 
     if 'nat' not in str(type(expected_operation_finish_date)):
       evaluated_operation_finish_date = expected_operation_finish_date
