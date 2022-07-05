@@ -237,6 +237,21 @@ def read_be_eo_xlsx():
         operation_finish_date_sap_upd_date = eo_master_data.operation_finish_date_sap_upd.date()
         if be_data_reported_operation_finish_date != operation_finish_date_sap_upd_date:
           eo_master_data.operation_finish_date_conflict = "дата завершения эксплуатации отличается"
+          field_name = "reported_finish_date"
+          field_be_data = be_data_reported_operation_finish_date
+          field_master_data = operation_finish_date_sap_upd_date
+          # запуск функции по проверке статуса текущего поля
+          # либо создается новый конфликт, либо разрeшается старый. Если данные совпадают с местером, то идем дальше
+          field_check_status(
+            be_eo_data_row_no,
+            be_data_eo_code,
+            field_name, 
+            field_be_data,
+            field_master_data,
+            infodata_filename, 
+            infodata_sender_email, 
+            infodata_sender_email_date
+          )
           db.session.commit()
         
         eo_master_data.reported_operation_finish_date = be_data_reported_operation_finish_datetime
