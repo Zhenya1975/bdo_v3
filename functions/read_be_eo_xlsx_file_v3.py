@@ -171,8 +171,8 @@ def read_be_eo_xlsx():
   # master_eo_temp_temp_df.to_csv('temp_data/master_eo_temp_temp_df.csv')
   
   master_eo_temp_temp_temp_df = master_eo_temp_temp_df.loc[master_eo_temp_temp_df['finish_date_delta'] !=0]
-  update_sql = f"UPDATE eo_DB SET operation_finish_date_conflict =NULL ;"
-  cursor.execute(update_sql)
+  update_sql_clear = f"UPDATE eo_DB SET operation_finish_date_conflict =NULL ;"
+  cursor.execute(update_sql_clear)
   con.commit()
   for row in master_eo_temp_temp_temp_df.itertuples():
     eo_code = getattr(row, 'eo_code')

@@ -122,7 +122,11 @@ def read_sap_eo_xlsx():
   db.session.commit()
 
   # итерируемся по полученному файлу
+  i=0
+  lenght = len(sap_eo_data)
   for row in sap_eo_data.itertuples():
+    i=i+1
+    print(i, " из ", lenght)
     eo_code_excel = getattr(row, "eo_code")
   
     # читаем мастер-файл из базы
