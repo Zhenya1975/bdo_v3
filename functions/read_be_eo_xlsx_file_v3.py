@@ -199,10 +199,11 @@ def read_be_eo_xlsx():
         be_data_reported_operation_finish_date = be_data_reported_operation_finish_datetime.date()
         
         operation_finish_date_sap_upd_date = eo_master_data.operation_finish_date_sap_upd
-        print(type(operation_finish_date_sap_upd_date))
-        # operation_finish_date_sap_upd_date = eo_master_data.operation_finish_date_sap_upd.date()
-        # if be_data_reported_operation_finish_date != operation_finish_date_sap_upd_date:
-        #   print('даты не равны')
+        
+        operation_finish_date_sap_upd_date = eo_master_data.operation_finish_date_sap_upd.date()
+        if be_data_reported_operation_finish_date != operation_finish_date_sap_upd_date:
+          eo_master_data.operation_finish_date_conflict = "дата завершения эксплуатации отличается"
+          db.session.commit()
         
         eo_master_data.reported_operation_finish_date = be_data_reported_operation_finish_datetime
         db.session.commit()  

@@ -124,7 +124,7 @@ class Eo_DB(db.Model):
   finish_date_delta = db.Column(db.Float)
   reported_operation_status_code = db.Column(db.String, db.ForeignKey('operation_statusDB.operation_status_code'))
   reported_operation_status_date = db.Column(db.DateTime)
-  
+  operation_finish_date_conflict = db.Column(db.String)
   evaluated_operation_finish_date = db.Column(db.DateTime)  # срок завершения эксплуатации с учетом данных из бизнес-единиц
   
   sap_system_status = db.Column(db.String)
