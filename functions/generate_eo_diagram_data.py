@@ -43,6 +43,7 @@ def generate_eo_diagram_data():
   eo_DB.expected_operation_period_years, \
   eo_DB.expected_operation_finish_date, \
   eo_DB.sap_planned_finish_operation_date, \
+  eo_DB.operation_finish_date_sap_upd, \
   eo_DB.expected_operation_status_code, \
   eo_DB.sap_system_status, \
   eo_DB.sap_user_status, \
@@ -65,6 +66,7 @@ def generate_eo_diagram_data():
   # excel_master_eo_df.to_csv('temp_data/excel_master_eo_df.csv')
   
   master_eo_df['evaluated_operation_finish_date'] = pd.to_datetime(master_eo_df['evaluated_operation_finish_date'])
+  master_eo_df['operation_finish_date_sap_upd'] = pd.to_datetime(master_eo_df['operation_finish_date_sap_upd'])
   
   master_eo_df['operation_start_date'] = pd.to_datetime(master_eo_df['operation_start_date'])
 
@@ -89,6 +91,10 @@ def generate_eo_diagram_data():
     year_first_date = datetime.strptime(year_data['period_start'], '%d.%m.%Y')
     year_last_date = datetime.strptime(year_data['period_end'], '%d.%m.%Y')
 
+    
+    eo_diagram_data_df = master_eo_df.loc[:, ['eo_code', 'eo_description', 'be_code', 'head_type', 'be_description', 'eo_class_code', 'eo_class_description', 'eo_category_spec', 'maker', 'eo_model_name', 'operation_start_date', 'evaluated_operation_finish_date', 'sap_system_status', 'sap_user_status', 'operation_finish_date_sap_upd']]
+    
+    eo_diagram_data_df['evaluated_operation_finish_date'] = eo_diagram_data_df['operation_finish_date_sap_upd']
     eo_diagram_data_df = master_eo_df.loc[:, ['eo_code', 'eo_description', 'be_code', 'head_type', 'be_description', 'eo_class_code', 'eo_class_description', 'eo_category_spec', 'maker', 'eo_model_name', 'operation_start_date', 'evaluated_operation_finish_date', 'sap_system_status', 'sap_user_status']]
     
     master_eo_df_temp = master_eo_df.loc[:, ['eo_code', 'operation_start_date', 'evaluated_operation_finish_date', 'sap_system_status', 'sap_user_status']]
