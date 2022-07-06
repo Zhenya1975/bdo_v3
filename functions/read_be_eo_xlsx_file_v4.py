@@ -63,13 +63,16 @@ def read_be_2_eo_xlsx():
   master_eo_df = master_eo_df.loc[master_eo_df['head_type']=='head']
   master_eo_df['operation_start_date'] = pd.to_datetime(master_eo_df['operation_start_date'])
   master_eo_df['sap_planned_finish_operation_date'] = pd.to_datetime(master_eo_df['sap_planned_finish_operation_date'])
-
+  master_eo_df['operation_finish_date_sap_upd'] = pd.to_datetime(master_eo_df['operation_finish_date_sap_upd'])
   # джойним данные из файла с мастер-данными
   be_master_data = pd.merge(master_eo_df, be_eo_data, on='eo_code', how='left')
   be_master_data.to_csv('temp_data/be_master_data.csv')
 
   result_data_list = []
   # итерируемся по годам
+  year_dict = {2022:{'period_start':'01.01.2022', 'period_end':'31.12.2022'}}
+  iterations_list = ["operation_finish_date_iteration_0"]
+  
   for year, year_data in year_dict.items():
     # print(year)
     year_first_date = datetime.strptime(year_data['period_start'], '%d.%m.%Y')
@@ -77,6 +80,19 @@ def read_be_2_eo_xlsx():
 
     # итерируемся по списку итераций
     for iteration in iterations_list:
+      be_master_data[iteration].fillna(date_time_plug, inplace = True)
+      be_master_data['operation_finish_date'] = be_master_data['operation_finish_date_sap_upd']
+      be_master_data_temp = be_master_data.loc[be_master_data[iteration]!=date_time_plug]
+      # be_master_data_temp.to_csv('temp_data/be_master_data_temp.csv')
+      be_master_data_temp = be_master_data_temp.copy()
+      be_master_data_temp[iteration] = pd.to_datetime(be_master_data_temp[iteration])
+
+      indexes = list(be_master_data_temp.index.values)
+
+      be_master_data = be_master_data.copy()
+      be_master_data.loc[indexes, ['operation_finish_date']] = pd.to_datetime(be_master_data_temp[iteration])
+      be_master_data.to_csv('temp_data/be_master_data_delete.csv')
+      
       # итерируемся по списку ео в загруженном файле
       for row in be_master_data.itertuples():
         eo_code = getattr(row, 'eo_code')
@@ -103,6 +119,7 @@ def read_be_2_eo_xlsx():
         sap_planned_finish_operation_date = getattr(row, 'sap_planned_finish_operation_date')
         operation_finish_date_sap_upd = getattr(row, 'operation_finish_date_sap_upd')
         operation_finish_date_update_iteration = getattr(row, iteration)
+        operation_finish_date = getattr(row, 'operation_finish_date')
         iteration_name = iteration
         temp_dict = {}
         temp_dict['eo_code'] = eo_code
@@ -124,6 +141,8 @@ def read_be_2_eo_xlsx():
         temp_dict['operation_finish_date_sap_upd'] = operation_finish_date_sap_upd
         
         temp_dict['operation_finish_date_update_iteration'] = operation_finish_date_update_iteration
+        temp_dict['operation_finish_date'] = operation_finish_date
+        
         temp_dict['iteration_name'] = iteration_name
         temp_dict['year'] = year
         
