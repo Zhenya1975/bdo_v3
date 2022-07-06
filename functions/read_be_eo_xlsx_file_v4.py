@@ -38,6 +38,7 @@ def read_be_2_eo_xlsx():
   sql = "SELECT \
   eo_DB.eo_code, \
   eo_DB.be_code, \
+  eo_DB.head_type, \
   be_DB.be_description, \
   eo_DB.eo_class_code, \
   eo_class_DB.eo_class_description, \
@@ -47,7 +48,9 @@ def read_be_2_eo_xlsx():
   eo_DB.eo_description, \
   eo_DB.operation_start_date, \
   eo_DB.expected_operation_period_years, \
+  eo_DB.operation_finish_date_calc, \
   eo_DB.sap_planned_finish_operation_date, \
+  eo_DB.operation_finish_date_sap_upd, \
   eo_DB.sap_system_status, \
   eo_DB.sap_user_status \
   FROM eo_DB \
@@ -57,11 +60,12 @@ def read_be_2_eo_xlsx():
   LEFT JOIN operation_statusDB ON eo_DB.expected_operation_status_code = operation_statusDB.operation_status_code"
   
   master_eo_df = pd.read_sql_query(sql, con)
+  master_eo_df = master_eo_df.loc[master_eo_df['head_type']=='head']
   master_eo_df['operation_start_date'] = pd.to_datetime(master_eo_df['operation_start_date'])
   master_eo_df['sap_planned_finish_operation_date'] = pd.to_datetime(master_eo_df['sap_planned_finish_operation_date'])
 
   # джойним данные из файла с мастер-данными
-  be_master_data = pd.merge(be_eo_data, master_eo_df, on='eo_code', how='left')
+  be_master_data = pd.merge(master_eo_df, be_eo_data, on='eo_code', how='left')
   be_master_data.to_csv('temp_data/be_master_data.csv')
 
   result_data_list = []
@@ -85,12 +89,20 @@ def read_be_2_eo_xlsx():
         eo_category_spec = getattr(row, 'eo_category_spec')
         eo_description = getattr(row, "eo_description")
         operation_status_rus = getattr(row, "operation_status")
-        operation_status = operaton_status_translation[operation_status_rus]
+        operation_status = 'in_operation'
+        try:
+          operation_status = operaton_status_translation[operation_status_rus]
+        except:
+          pass
         sap_user_status = getattr(row, "sap_user_status")
         sap_system_status = getattr(row, "sap_system_status")
 
         operation_start_date = getattr(row, 'operation_start_date')
-        operation_finish_date = getattr(row, iteration)
+        expected_operation_period_years = getattr(row, 'expected_operation_period_years')
+        operation_finish_date_calc = getattr(row, 'operation_finish_date_calc')
+        sap_planned_finish_operation_date = getattr(row, 'sap_planned_finish_operation_date')
+        operation_finish_date_sap_upd = getattr(row, 'operation_finish_date_sap_upd')
+        operation_finish_date_update_iteration = getattr(row, iteration)
         iteration_name = iteration
         temp_dict = {}
         temp_dict['eo_code'] = eo_code
@@ -106,9 +118,15 @@ def read_be_2_eo_xlsx():
         temp_dict['sap_user_status'] = sap_user_status
         temp_dict['sap_system_status'] = sap_system_status
         temp_dict['operation_start_date'] = operation_start_date
-        temp_dict['operation_finish_date'] = operation_finish_date
+        temp_dict['expected_operation_period_years'] = expected_operation_period_years
+        temp_dict['operation_finish_date_calc'] = operation_finish_date_calc
+        temp_dict['sap_planned_finish_operation_date'] = sap_planned_finish_operation_date
+        temp_dict['operation_finish_date_sap_upd'] = operation_finish_date_sap_upd
+        
+        temp_dict['operation_finish_date_update_iteration'] = operation_finish_date_update_iteration
         temp_dict['iteration_name'] = iteration_name
         temp_dict['year'] = year
+        
         # определяем статус Эксплуатация
         #  если в пользовательском сап статусе нет статуса консервация
         # если в статусе загруженного файла нет слова Консервация
@@ -123,6 +141,18 @@ def read_be_2_eo_xlsx():
         else:
           temp_dict['in_operation'] = 0
         
+        # определяем статус Ввод нового
+        # если в пользовательском сап статусе нет статуса консервация
+        # если в статусе загруженного файла нет слова Консервация  
+        if sap_user_status not in sap_user_status_cons_status_list and \
+        sap_system_status not in sap_system_status_ban_list and \
+        operation_status != 'in_conservation' and \
+        operation_start_date >= year_first_date and \
+        operation_start_date <= year_last_date:
+          temp_dict['add_new'] = 1
+        else:
+          temp_dict['add_new'] = 0
+          
         result_data_list.append(temp_dict)
         
   iterations_df = pd.DataFrame(result_data_list) 
