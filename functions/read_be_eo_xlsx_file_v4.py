@@ -102,6 +102,9 @@ def read_be_2_eo_xlsx():
         temp_dict['eo_model_name'] = eo_model_name
         temp_dict['eo_category_spec'] = eo_category_spec
         temp_dict['eo_description'] = eo_description
+        temp_dict['operation_status_rus'] = operation_status_rus
+        temp_dict['sap_user_status'] = sap_user_status
+        temp_dict['sap_system_status'] = sap_system_status
         temp_dict['operation_start_date'] = operation_start_date
         temp_dict['operation_finish_date'] = operation_finish_date
         temp_dict['iteration_name'] = iteration_name
