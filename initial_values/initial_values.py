@@ -22,3 +22,9 @@ year_dict = {2022:{'period_start':'01.01.2022', 'period_end':'31.12.2022'},
                2034:{'period_start':'01.01.2034', 'period_end':'31.12.2034'},
                2035:{'period_start':'01.01.2035', 'period_end':'31.12.2035'}
               }
+operaton_status_translation = {
+  "Эксплуатация":"in_operation",
+  "эксплуатация":"in_operation",
+  "Консервация":"in_conservation",
+  "ТУ списано":"scrapped"
+}

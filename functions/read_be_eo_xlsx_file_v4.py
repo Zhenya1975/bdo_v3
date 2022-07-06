@@ -3,7 +3,7 @@ from extensions import extensions
 from models.models import Eo_DB, Be_DB, LogsDB, Eo_data_conflicts, Eo_candidatesDB
 from initial_values.initial_values import be_data_columns_to_master_columns, year_dict
 from datetime import datetime
-from initial_values.initial_values import sap_user_status_cons_status_list, be_data_cons_status_list, sap_system_status_ban_list
+from initial_values.initial_values import sap_user_status_cons_status_list, be_data_cons_status_list, sap_system_status_ban_list, operaton_status_translation
 import sqlite3
 
 db = extensions.db
@@ -62,7 +62,7 @@ def read_be_2_eo_xlsx():
 
   # джойним данные из файла с мастер-данными
   be_master_data = pd.merge(be_eo_data, master_eo_df, on='eo_code', how='left')
-  # be_master_data.to_csv('temp_data/be_master_data.csv')
+  be_master_data.to_csv('temp_data/be_master_data.csv')
 
   result_data_list = []
   # итерируемся по годам
@@ -84,6 +84,11 @@ def read_be_2_eo_xlsx():
         eo_model_id = getattr(row, 'eo_model_id')
         eo_category_spec = getattr(row, 'eo_category_spec')
         eo_description = getattr(row, "eo_description")
+        operation_status_rus = getattr(row, "operation_status")
+        operation_status = operaton_status_translation[operation_status_rus]
+        sap_user_status = getattr(row, "sap_user_status")
+        sap_system_status = getattr(row, "sap_system_status")
+
         operation_start_date = getattr(row, 'operation_start_date')
         operation_finish_date = getattr(row, iteration)
         iteration_name = iteration
@@ -101,6 +106,20 @@ def read_be_2_eo_xlsx():
         temp_dict['operation_finish_date'] = operation_finish_date
         temp_dict['iteration_name'] = iteration_name
         temp_dict['year'] = year
+        # определяем статус Эксплуатация
+        #  если в пользовательском сап статусе нет статуса консервация
+        # если в статусе загруженного файла нет слова Консервация
+        # если дата начала эксплуатации меньше или равно последнего дня года
+        # если дата завершения эксплуатации больше или равно первому дню года
+        if sap_user_status not in sap_user_status_cons_status_list and \
+        sap_system_status not in sap_system_status_ban_list and \
+        operation_status != 'in_conservation' and \
+        operation_start_date <= year_last_date and \
+        operation_finish_date >= year_first_date:
+          temp_dict['in_operation'] = 1
+        else:
+          temp_dict['in_operation'] = 0
+        
         result_data_list.append(temp_dict)
         
   iterations_df = pd.DataFrame(result_data_list) 
