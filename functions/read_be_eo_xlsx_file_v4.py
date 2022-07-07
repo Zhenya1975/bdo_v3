@@ -95,9 +95,10 @@ def read_be_2_eo_xlsx():
     # итерируемся по списку ео в загруженном файле
     i=0
     lenght = len(be_master_data)
+    print("Итерация ", iteration,", ", lenght, " eo")
     for row in be_master_data.itertuples():
       i=i+1
-      print("Итерация ", iteration,", ", i, " из ", lenght)
+      # print("Итерация ", iteration,", ", i, " из ", lenght)
       eo_code = getattr(row, 'eo_code')
       be_code = getattr(row, 'be_code')
       be_description = getattr(row, 'be_description')
@@ -173,18 +174,27 @@ def read_be_2_eo_xlsx():
           temp_dict['operation_finish_date_update_iteration'] = operation_finish_date_update_iteration
           temp_dict['operation_finish_date'] = operation_finish_date
           temp_dict['iteration_name'] = iteration_name
-          temp_dict['operation_status'] = status_condition_rus
           temp_dict['year'] = year 
           if status_condition == "new":
+            temp_dict['operation_status'] = "Ввод нового"
             if sap_user_status not in sap_user_status_cons_status_list and \
             sap_system_status not in sap_system_status_ban_list and \
             operation_start_date >= year_first_date and \
             operation_start_date <= year_last_date:
               temp_dict['qty'] = 1
             else:
+             temp_dict['qty'] = 0
+            result_data_list.append(temp_dict)  
+          if status_condition == "in_operation":
+            temp_dict['operation_status'] = "Эксплуатация"
+            if sap_user_status not in sap_user_status_cons_status_list and \
+            sap_system_status not in sap_system_status_ban_list and \
+            operation_start_date <= year_last_date and \
+            operation_finish_date >= year_first_date:
+              temp_dict['qty'] = 1
+            else:
               temp_dict['qty'] = 0
             result_data_list.append(temp_dict)
-
           
     iterations_df = pd.DataFrame(result_data_list) 
     iterations_df.to_csv('temp_data/iterations_df.csv')
