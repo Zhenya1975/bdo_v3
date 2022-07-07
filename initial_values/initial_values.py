@@ -28,3 +28,4 @@ operaton_status_translation = {
   "Консервация":"in_conservation",
   "ТУ списано":"scrapped"
 }
+

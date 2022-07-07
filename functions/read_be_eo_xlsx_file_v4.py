@@ -70,114 +70,124 @@ def read_be_2_eo_xlsx():
 
   result_data_list = []
   # итерируемся по годам
-  year_dict = {2022:{'period_start':'01.01.2022', 'period_end':'31.12.2022'}}
-  iterations_list = ["operation_finish_date_iteration_0"]
+  # year_dict = {2022:{'period_start':'01.01.2022', 'period_end':'31.12.2022'}}
+  # iterations_list = ["operation_finish_date_iteration_0"]
   
-  for year, year_data in year_dict.items():
-    # print(year)
-    year_first_date = datetime.strptime(year_data['period_start'], '%d.%m.%Y')
-    year_last_date = datetime.strptime(year_data['period_end'], '%d.%m.%Y')
+  
 
-    # итерируемся по списку итераций
-    for iteration in iterations_list:
-      be_master_data[iteration].fillna(date_time_plug, inplace = True)
-      be_master_data['operation_finish_date'] = be_master_data['operation_finish_date_sap_upd']
-      be_master_data['operation_finish_date'] = be_master_data['operation_finish_date'].dt.date
-      be_master_data[iteration] = be_master_data[iteration].dt.date
-      be_master_data.to_csv('temp_data/be_master_data_delete_before_insert.csv')
-      
-      be_master_data_temp = be_master_data.loc[be_master_data[iteration]!=date_time_plug.date()]
+  # итерируемся по списку итераций
+  for iteration in iterations_list:
+    be_master_data[iteration] = pd.to_datetime(be_master_data[iteration])
+    be_master_data[iteration].fillna(date_time_plug, inplace = True)
+    be_master_data['operation_finish_date'] = be_master_data['operation_finish_date_sap_upd']
+    be_master_data['operation_finish_date'] = be_master_data['operation_finish_date'].dt.date
+    
+    be_master_data[iteration] = be_master_data[iteration].dt.date
+    
+    be_master_data_temp = be_master_data.loc[be_master_data[iteration]!=date_time_plug.date()]
 
-      indexes = list(be_master_data_temp.index.values)
-      
-      be_master_data.loc[indexes, ['operation_finish_date']] = be_master_data_temp[iteration]
+    indexes = list(be_master_data_temp.index.values)
+    
+    be_master_data.loc[indexes, ['operation_finish_date']] = be_master_data_temp[iteration]
 
-      be_master_data['operation_finish_date'] = pd.to_datetime(be_master_data['operation_finish_date'])
-      
-      
-      # итерируемся по списку ео в загруженном файле
-      for row in be_master_data.itertuples():
-        eo_code = getattr(row, 'eo_code')
-        be_code = getattr(row, 'be_code')
-        be_description = getattr(row, 'be_description')
-        eo_class_code = getattr(row, 'eo_class_code')
-        eo_class_description = getattr(row, 'eo_class_description')
-        eo_model_name = getattr(row, 'eo_model_name')
-        eo_model_id = getattr(row, 'eo_model_id')
-        eo_category_spec = getattr(row, 'eo_category_spec')
-        eo_description = getattr(row, "eo_description")
-        operation_status_rus = getattr(row, "operation_status")
-        operation_status = 'in_operation'
-        try:
-          operation_status = operaton_status_translation[operation_status_rus]
-        except:
-          pass
-        sap_user_status = getattr(row, "sap_user_status")
-        sap_system_status = getattr(row, "sap_system_status")
+    be_master_data['operation_finish_date'] = pd.to_datetime(be_master_data['operation_finish_date'])
 
-        operation_start_date = getattr(row, 'operation_start_date')
-        expected_operation_period_years = getattr(row, 'expected_operation_period_years')
-        operation_finish_date_calc = getattr(row, 'operation_finish_date_calc')
-        sap_planned_finish_operation_date = getattr(row, 'sap_planned_finish_operation_date')
-        operation_finish_date_sap_upd = getattr(row, 'operation_finish_date_sap_upd')
-        operation_finish_date_update_iteration = getattr(row, iteration)
-        operation_finish_date = getattr(row, 'operation_finish_date')
-        iteration_name = iteration
-        temp_dict = {}
-        temp_dict['eo_code'] = eo_code
-        temp_dict['be_code'] = be_code
-        temp_dict['be_description'] = be_description
-        temp_dict['eo_class_code'] = eo_class_code
-        temp_dict['eo_class_description'] = eo_class_description
-        temp_dict['eo_model_id'] = eo_model_id
-        temp_dict['eo_model_name'] = eo_model_name
-        temp_dict['eo_category_spec'] = eo_category_spec
-        temp_dict['eo_description'] = eo_description
-        temp_dict['operation_status_rus'] = operation_status_rus
-        temp_dict['sap_user_status'] = sap_user_status
-        temp_dict['sap_system_status'] = sap_system_status
-        temp_dict['operation_start_date'] = operation_start_date
-        temp_dict['expected_operation_period_years'] = expected_operation_period_years
-        temp_dict['operation_finish_date_calc'] = operation_finish_date_calc
-        temp_dict['sap_planned_finish_operation_date'] = sap_planned_finish_operation_date
-        temp_dict['operation_finish_date_sap_upd'] = operation_finish_date_sap_upd
-        
-        temp_dict['operation_finish_date_update_iteration'] = operation_finish_date_update_iteration
-        temp_dict['operation_finish_date'] = operation_finish_date
-        
-        temp_dict['iteration_name'] = iteration_name
-        temp_dict['year'] = year
-        
-        # определяем статус Эксплуатация
-        #  если в пользовательском сап статусе нет статуса консервация
-        # если в статусе загруженного файла нет слова Консервация
-        # если дата начала эксплуатации меньше или равно последнего дня года
-        # если дата завершения эксплуатации больше или равно первому дню года
-        if sap_user_status not in sap_user_status_cons_status_list and \
-        sap_system_status not in sap_system_status_ban_list and \
-        operation_status != 'in_conservation' and \
-        operation_start_date <= year_last_date and \
-        operation_finish_date >= year_first_date:
-          temp_dict['in_operation'] = 1
-        else:
-          temp_dict['in_operation'] = 0
-        
-        # определяем статус Ввод нового
-        # если в пользовательском сап статусе нет статуса консервация
-        # если в статусе загруженного файла нет слова Консервация  
-        if sap_user_status not in sap_user_status_cons_status_list and \
-        sap_system_status not in sap_system_status_ban_list and \
-        operation_status != 'in_conservation' and \
-        operation_start_date >= year_first_date and \
-        operation_start_date <= year_last_date:
-          temp_dict['add_new'] = 1
-        else:
-          temp_dict['add_new'] = 0
+    # итерируемся по списку ео в загруженном файле
+    i=0
+    lenght = len(be_master_data)
+    for row in be_master_data.itertuples():
+      i=i+1
+      print("Итерация ", iteration,", ", i, " из ", lenght)
+      eo_code = getattr(row, 'eo_code')
+      be_code = getattr(row, 'be_code')
+      be_description = getattr(row, 'be_description')
+      eo_class_code = getattr(row, 'eo_class_code')
+      eo_class_description = getattr(row, 'eo_class_description')
+      eo_model_name = getattr(row, 'eo_model_name')
+      eo_model_id = getattr(row, 'eo_model_id')
+      eo_category_spec = getattr(row, 'eo_category_spec')
+      eo_description = getattr(row, "eo_description")
+      # operation_status_rus = getattr(row, "operation_status")
+      sap_user_status = getattr(row, "sap_user_status")
+      sap_system_status = getattr(row, "sap_system_status")
+      # operation_status = status_condition
+
+      operation_start_date = getattr(row, 'operation_start_date')
+      expected_operation_period_years = getattr(row, 'expected_operation_period_years')
+      operation_finish_date_calc = getattr(row, 'operation_finish_date_calc')
+      sap_planned_finish_operation_date = getattr(row, 'sap_planned_finish_operation_date')
+      operation_finish_date_sap_upd = getattr(row, 'operation_finish_date_sap_upd')
+      operation_finish_date_update_iteration = getattr(row, iteration)
+      operation_finish_date = getattr(row, 'operation_finish_date')
+      iteration_name = iteration
+      # определяем статус Эксплуатация
+      #  если в пользовательском сап статусе нет статуса консервация
+      # если в статусе загруженного файла нет слова Консервация
+      # если дата начала эксплуатации меньше или равно последнего дня года
+      # если дата завершения эксплуатации больше или равно первому дню года
+      
+      # if sap_user_status not in sap_user_status_cons_status_list and \
+      # sap_system_status not in sap_system_status_ban_list and \
+      # operation_status != 'in_conservation' and \
+      # operation_start_date <= year_last_date and \
+      # operation_finish_date >= year_first_date:
+      #   temp_dict['in_operation'] = 1
+      # else:
+      #   temp_dict['in_operation'] = 0
+      
+      # определяем статус Ввод нового
+      # если в пользовательском сап статусе нет статуса консервация
+      # если в статусе загруженного файла нет слова Консервация  
+      # если статус "ввод нового", то в поле "Количество" мы ставим единичку, если есть поступление
+      # итерируемся по статусам - агрегатным состояниям
+      status_condition_dict = {
+        "new":"Ввод нового",
+        "on_balance":"На балансе",
+        "conservation":"Консервация",
+        "remake":"Переоборудование",
+        "out":"План на вывод",
+        "in_operation":"Эксплуатация"
+      }
+      for status_condition, status_condition_rus in status_condition_dict.items():
+        for year, year_data in year_dict.items():
+          # print(year)
+          year_first_date = datetime.strptime(year_data['period_start'], '%d.%m.%Y')
+          year_last_date = datetime.strptime(year_data['period_end'], '%d.%m.%Y')
+          temp_dict = {} 
+          temp_dict['eo_code'] = eo_code
+          temp_dict['be_code'] = be_code
+          temp_dict['be_description'] = be_description
+          temp_dict['eo_class_code'] = eo_class_code
+          temp_dict['eo_class_description'] = eo_class_description
+          temp_dict['eo_model_id'] = eo_model_id
+          temp_dict['eo_model_name'] = eo_model_name
+          temp_dict['eo_category_spec'] = eo_category_spec
+          temp_dict['eo_description'] = eo_description
+          temp_dict['sap_user_status'] = sap_user_status
+          temp_dict['sap_system_status'] = sap_system_status
+          temp_dict['operation_start_date'] = operation_start_date
+          temp_dict['expected_operation_period_years'] = expected_operation_period_years
+          temp_dict['operation_finish_date_calc'] = operation_finish_date_calc
+          temp_dict['sap_planned_finish_operation_date'] = sap_planned_finish_operation_date
+          temp_dict['operation_finish_date_sap_upd'] = operation_finish_date_sap_upd
+          temp_dict['operation_finish_date_update_iteration'] = operation_finish_date_update_iteration
+          temp_dict['operation_finish_date'] = operation_finish_date
+          temp_dict['iteration_name'] = iteration_name
+          temp_dict['operation_status'] = status_condition_rus
+          temp_dict['year'] = year 
+          if status_condition == "new":
+            if sap_user_status not in sap_user_status_cons_status_list and \
+            sap_system_status not in sap_system_status_ban_list and \
+            operation_start_date >= year_first_date and \
+            operation_start_date <= year_last_date:
+              temp_dict['qty'] = 1
+            else:
+              temp_dict['qty'] = 0
+            result_data_list.append(temp_dict)
+
           
-        result_data_list.append(temp_dict)
-        
-  iterations_df = pd.DataFrame(result_data_list) 
-  iterations_df.to_csv('temp_data/iterations_df.csv')
+    iterations_df = pd.DataFrame(result_data_list) 
+    iterations_df.to_csv('temp_data/iterations_df.csv')
         
         
         
