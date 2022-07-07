@@ -173,6 +173,7 @@ def read_be_2_eo_xlsx():
           if status_condition == "in_operation":
             temp_dict['operation_status'] = "Эксплуатация"
             if sap_user_status not in sap_user_status_cons_status_list and \
+            operation_status_from_file != "Консервация" and \
             sap_system_status not in sap_system_status_ban_list and \
             operation_start_date <= year_last_date and \
             operation_finish_date >= year_first_date:
@@ -189,6 +190,22 @@ def read_be_2_eo_xlsx():
              conservation_start_date <= year_last_date and \
              operation_finish_date >= year_first_date:
              temp_dict['qty'] = 1
+            else:
+              temp_dict['qty'] = 0
+            result_data_list.append(temp_dict)
+          
+          if status_condition == "on_balance":
+            temp_dict['operation_status'] = "На балансе"
+            
+            if (operation_status_from_file == "Консервация" and \
+             sap_system_status not in sap_system_status_ban_list and \
+             conservation_start_date <= year_last_date and \
+             operation_finish_date >= year_first_date) or \
+             (sap_user_status not in sap_user_status_cons_status_list and \
+             sap_system_status not in sap_system_status_ban_list and \
+             operation_start_date <= year_last_date and \
+             operation_finish_date >= year_first_date):
+               temp_dict['qty'] = 1
             else:
               temp_dict['qty'] = 0
             result_data_list.append(temp_dict)
