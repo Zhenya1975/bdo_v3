@@ -29,7 +29,7 @@ def read_be_2_eo_xlsx():
   be_eo_data['operation_finish_date_iteration_0'] = pd.to_datetime(be_eo_data['operation_finish_date_iteration_0'], format='%d.%m.%Y')
   be_eo_data['operation_finish_date_iteration_1'] = pd.to_datetime(be_eo_data['operation_finish_date_iteration_1'], format='%d.%m.%Y')
   be_eo_data['operation_finish_date_iteration_2'] = pd.to_datetime(be_eo_data['operation_finish_date_iteration_2'], format='%d.%m.%Y')
-  
+  be_eo_data['conservation_start_date'] = pd.to_datetime(be_eo_data['conservation_start_date'], format='%d.%m.%Y')
 
   # получаем данные из мастер-файла
   con = sqlite3.connect("database/datab.db")
@@ -111,7 +111,8 @@ def read_be_2_eo_xlsx():
       # operation_status_rus = getattr(row, "operation_status")
       sap_user_status = getattr(row, "sap_user_status")
       sap_system_status = getattr(row, "sap_system_status")
-      # operation_status = status_condition
+      operation_status_from_file = getattr(row, "operation_status") # статус, полученный из файла
+
 
       operation_start_date = getattr(row, 'operation_start_date')
       expected_operation_period_years = getattr(row, 'expected_operation_period_years')
@@ -121,26 +122,8 @@ def read_be_2_eo_xlsx():
       operation_finish_date_update_iteration = getattr(row, iteration)
       operation_finish_date = getattr(row, 'operation_finish_date')
       iteration_name = iteration
-      # определяем статус Эксплуатация
-      #  если в пользовательском сап статусе нет статуса консервация
-      # если в статусе загруженного файла нет слова Консервация
-      # если дата начала эксплуатации меньше или равно последнего дня года
-      # если дата завершения эксплуатации больше или равно первому дню года
+      conservation_start_date = getattr(row, 'conservation_start_date')
       
-      # if sap_user_status not in sap_user_status_cons_status_list and \
-      # sap_system_status not in sap_system_status_ban_list and \
-      # operation_status != 'in_conservation' and \
-      # operation_start_date <= year_last_date and \
-      # operation_finish_date >= year_first_date:
-      #   temp_dict['in_operation'] = 1
-      # else:
-      #   temp_dict['in_operation'] = 0
-      
-      # определяем статус Ввод нового
-      # если в пользовательском сап статусе нет статуса консервация
-      # если в статусе загруженного файла нет слова Консервация  
-      # если статус "ввод нового", то в поле "Количество" мы ставим единичку, если есть поступление
-      # итерируемся по статусам - агрегатным состояниям
       status_condition_dict = {
         "new":"Ввод нового",
         "on_balance":"На балансе",
@@ -173,6 +156,8 @@ def read_be_2_eo_xlsx():
           temp_dict['operation_finish_date_sap_upd'] = operation_finish_date_sap_upd
           temp_dict['operation_finish_date_update_iteration'] = operation_finish_date_update_iteration
           temp_dict['operation_finish_date'] = operation_finish_date
+          temp_dict['operation_status_from_file'] = operation_status_from_file
+          temp_dict['conservation_start_date'] = conservation_start_date
           temp_dict['iteration_name'] = iteration_name
           temp_dict['year'] = year 
           if status_condition == "new":
@@ -195,7 +180,20 @@ def read_be_2_eo_xlsx():
             else:
               temp_dict['qty'] = 0
             result_data_list.append(temp_dict)
-          
+            
+          if status_condition == "conservation":
+            temp_dict['operation_status'] = "Консервация"
+            
+            if operation_status_from_file == "Консервация" and \
+             sap_system_status not in sap_system_status_ban_list and \
+             conservation_start_date <= year_last_date and \
+             operation_finish_date >= year_first_date:
+             temp_dict['qty'] = 1
+            else:
+              temp_dict['qty'] = 0
+            result_data_list.append(temp_dict)
+
+            
     iterations_df = pd.DataFrame(result_data_list) 
     iterations_df.to_csv('temp_data/iterations_df.csv')
         
