@@ -210,6 +210,17 @@ def read_be_2_eo_xlsx():
               temp_dict['qty'] = 0
             result_data_list.append(temp_dict)
 
+          if status_condition == "out":
+            temp_dict['operation_status'] = "План на вывод"
+            if sap_system_status not in sap_system_status_ban_list and \
+            operation_finish_date <= year_last_date and \
+            operation_finish_date >= year_first_date:
+              temp_dict['qty'] = -1
+            else:
+              temp_dict['qty'] = 0
+            result_data_list.append(temp_dict)
+
+
             
     iterations_df = pd.DataFrame(result_data_list) 
     iterations_df.to_csv('temp_data/iterations_df.csv')
