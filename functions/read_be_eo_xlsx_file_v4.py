@@ -87,19 +87,13 @@ def read_be_2_eo_xlsx():
       be_master_data.to_csv('temp_data/be_master_data_delete_before_insert.csv')
       
       be_master_data_temp = be_master_data.loc[be_master_data[iteration]!=date_time_plug.date()]
-      be_master_data_temp.to_csv('temp_data/be_master_data_temp_selection.csv')
-      # print(be_master_data_temp['operation_finish_date'])
-      # print(be_master_data_temp.info())
 
-      # be_master_data['operation_finish_date'] = pd.to_datetime(be_master_data_temp["operation_finish_date"])
       indexes = list(be_master_data_temp.index.values)
-
-      # be_master_data = be_master_data.copy()
       
       be_master_data.loc[indexes, ['operation_finish_date']] = be_master_data_temp[iteration]
-      # be_master_data['operation_finish_date'] = pd.to_datetime(be_master_data['operation_finish_date'])
+
+      be_master_data['operation_finish_date'] = pd.to_datetime(be_master_data['operation_finish_date'])
       
-      be_master_data.to_csv('temp_data/be_master_data_delete.csv')
       
       # итерируемся по списку ео в загруженном файле
       for row in be_master_data.itertuples():
