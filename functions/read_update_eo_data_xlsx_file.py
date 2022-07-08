@@ -146,7 +146,27 @@ def read_update_eo_data_xlsx():
         if expected_operation_finish_datetime != datetime.strptime('1.1.2199', '%d.%m.%Y'):
           eo_master_data.expected_operation_finish_date = expected_operation_finish_datetime
           db.session.commit() 
-        
+
+      if 'type_mironov' in update_eo_column_list:
+        type_mironov = getattr(row, 'type_mironov')
+        eo_master_data.type_mironov = type_mironov
+        db.session.commit()
+
+      if 'short_description_mironov' in update_eo_column_list:
+        short_description_mironov = getattr(row, 'short_description_mironov')
+        eo_master_data.short_description_mironov = short_description_mironov
+        db.session.commit()
+
+      if 'marka_modeli_mironov' in update_eo_column_list:
+        marka_modeli_mironov = getattr(row, 'marka_modeli_mironov')
+        eo_master_data.marka_modeli_mironov = marka_modeli_mironov
+        db.session.commit()  
+
+      if 'marka_oborudovania_mironov' in update_eo_column_list:
+        marka_oborudovania_mironov = getattr(row, 'marka_oborudovania_mironov')
+        eo_master_data.marka_oborudovania_mironov = marka_oborudovania_mironov
+        db.session.commit()   
+      
 
     else:
       log_data_new_record = LogsDB(log_text = f"В мастер-данных нет записи с eo_code: {eo_code}", log_status = "new")

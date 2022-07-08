@@ -22,6 +22,10 @@ def sql_to_eo_master():
   models_DB.eo_category_spec, \
   eo_DB.eo_model_id, \
   eo_DB.sap_model_name, \
+  eo_DB.type_mironov, \
+  eo_DB.short_description_mironov, \
+  eo_DB.marka_modeli_mironov, \
+  eo_DB.marka_oborudovania_mironov, \
   eo_DB.sap_maker, \
   eo_DB.maker, \
   eo_DB.teh_mesto, \

@@ -126,7 +126,6 @@ class Eo_DB(db.Model):
   reported_operation_status_date = db.Column(db.DateTime)
   operation_finish_date_conflict = db.Column(db.String) # если даты reported и operation_finish_date_sap_upd отличаются, то пишем сюда текст с конфликтом
   evaluated_operation_finish_date = db.Column(db.DateTime)  # срок завершения эксплуатации с учетом данных из бизнес-единиц
-  
   sap_system_status = db.Column(db.String)
   sap_user_status = db.Column(db.String)
   sap_model_name = db.Column(db.String)
@@ -135,8 +134,12 @@ class Eo_DB(db.Model):
   age = db.Column(db.Float)
   age_date = db.Column(db.DateTime)
   age_calc_operation_status = db.Column(db.Integer)
-
   
+  type_mironov = db.Column(db.String)
+  short_description_mironov = db.Column(db.String)
+  marka_modeli_mironov = db.Column(db.String)
+  marka_oborudovania_mironov = db.Column(db.String)
+
   conflict_data = db.relationship('Eo_data_conflicts', backref='conflict_data')
   logs_data = db.relationship('LogsDB', backref='logs_data')
   calendar_status = db.relationship('Eo_calendar_operation_status_DB', backref='calendar_status')
@@ -157,6 +160,8 @@ class Models_DB(db.Model):
   eo_model_name = db.Column(db.String)
   model_data = db.relationship('Eo_DB', backref='model_data')
   eo_category_spec = db.Column(db.String)
+  type_tehniki = db.Column(db.String)
+  marka_oborudovania = db.Column(db.String)
 
 class Eo_class_DB(db.Model):
   id = db.Column(db.Integer, primary_key=True)

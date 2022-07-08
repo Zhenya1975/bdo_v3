@@ -3,7 +3,7 @@ from extensions import extensions
 from models.models import Eo_DB, Be_DB, LogsDB, Eo_data_conflicts, Eo_candidatesDB
 from initial_values.initial_values import be_data_columns_to_master_columns, year_dict
 from datetime import datetime
-from initial_values.initial_values import sap_user_status_cons_status_list, be_data_cons_status_list, sap_system_status_ban_list, operaton_status_translation
+from initial_values.initial_values import sap_user_status_cons_status_list, be_data_cons_status_list, sap_system_status_ban_list, operaton_status_translation, master_data_to_ru_columns
 import sqlite3
 
 db = extensions.db
@@ -19,6 +19,12 @@ iterations = {
   "Дата вывода 2 - итерация продления (корр 30.06.22)": "iteration_2"
 }
 iterations_list = ["operation_finish_date_iteration_0",	"operation_finish_date_iteration_1",	"operation_finish_date_iteration_2"]
+iterations_dict = {
+  "operation_finish_date_iteration_0":"Дата вывода 0 - итерация продления",
+  "operation_finish_date_iteration_1":"Дата вывода 1 - итерация продления",
+  "operation_finish_date_iteration_2":"Дата вывода 2 - итерация продления"
+}
+
 
 def read_be_2_eo_xlsx():
   # читаем загруженный файл 
@@ -46,6 +52,7 @@ def read_be_2_eo_xlsx():
   models_DB.eo_category_spec, \
   eo_DB.eo_model_id, \
   eo_DB.eo_description, \
+  eo_DB.gar_no, \
   eo_DB.operation_start_date, \
   eo_DB.expected_operation_period_years, \
   eo_DB.operation_finish_date_calc, \
@@ -76,7 +83,8 @@ def read_be_2_eo_xlsx():
   
 
   # итерируемся по списку итераций
-  for iteration in iterations_list:
+  
+  for iteration, iteration_rus in iterations_dict.items():
     be_master_data[iteration] = pd.to_datetime(be_master_data[iteration])
     be_master_data[iteration].fillna(date_time_plug, inplace = True)
     be_master_data['operation_finish_date'] = be_master_data['operation_finish_date_sap_upd']
@@ -105,14 +113,14 @@ def read_be_2_eo_xlsx():
       eo_class_code = getattr(row, 'eo_class_code')
       eo_class_description = getattr(row, 'eo_class_description')
       eo_model_name = getattr(row, 'eo_model_name')
-      eo_model_id = getattr(row, 'eo_model_id')
+      # eo_model_id = getattr(row, 'eo_model_id')
       eo_category_spec = getattr(row, 'eo_category_spec')
       eo_description = getattr(row, "eo_description")
+      gar_no = getattr(row, "gar_no")
       # operation_status_rus = getattr(row, "operation_status")
       sap_user_status = getattr(row, "sap_user_status")
       sap_system_status = getattr(row, "sap_system_status")
       operation_status_from_file = getattr(row, "operation_status") # статус, полученный из файла
-
 
       operation_start_date = getattr(row, 'operation_start_date')
       expected_operation_period_years = getattr(row, 'expected_operation_period_years')
@@ -121,7 +129,7 @@ def read_be_2_eo_xlsx():
       operation_finish_date_sap_upd = getattr(row, 'operation_finish_date_sap_upd')
       operation_finish_date_update_iteration = getattr(row, iteration)
       operation_finish_date = getattr(row, 'operation_finish_date')
-      iteration_name = iteration
+      iteration_name = iteration_rus
       conservation_start_date = getattr(row, 'conservation_start_date')
       
       status_condition_dict = {
@@ -143,10 +151,13 @@ def read_be_2_eo_xlsx():
           temp_dict['be_description'] = be_description
           temp_dict['eo_class_code'] = eo_class_code
           temp_dict['eo_class_description'] = eo_class_description
-          temp_dict['eo_model_id'] = eo_model_id
-          temp_dict['eo_model_name'] = eo_model_name
+          # temp_dict['eo_model_id'] = eo_model_id
           temp_dict['eo_category_spec'] = eo_category_spec
+          temp_dict['eo_model_name'] = eo_model_name
+          
           temp_dict['eo_description'] = eo_description
+          temp_dict['gar_no'] = gar_no
+          
           temp_dict['sap_user_status'] = sap_user_status
           temp_dict['sap_system_status'] = sap_system_status
           temp_dict['operation_start_date'] = operation_start_date
@@ -221,8 +232,55 @@ def read_be_2_eo_xlsx():
             result_data_list.append(temp_dict)
 
 
-            
     iterations_df = pd.DataFrame(result_data_list) 
+    try:
+      iterations_df['be_code'] = iterations_df['be_code'].astype(int)
+    except:
+      pass
+    try:
+      iterations_df["operation_start_date"] = iterations_df["operation_start_date"].dt.strftime("%d.%m.%Y")
+    except:
+      pass
+    try:
+      iterations_df["operation_finish_date_calc"] = pd.to_datetime(iterations_df["operation_finish_date_calc"])
+      iterations_df["operation_finish_date_calc"] = iterations_df["operation_finish_date_calc"].dt.strftime("%d.%m.%Y")
+    except Exception as e:
+      print(e)  
+    try:
+      iterations_df["sap_planned_finish_operation_date"] = pd.to_datetime(iterations_df["sap_planned_finish_operation_date"])
+      iterations_df["sap_planned_finish_operation_date"] = iterations_df["sap_planned_finish_operation_date"].dt.strftime("%d.%m.%Y")
+    except Exception as e:
+      print(e)
+    try:
+      iterations_df["operation_finish_date_sap_upd"] = pd.to_datetime(iterations_df["operation_finish_date_sap_upd"])
+      iterations_df["operation_finish_date_sap_upd"] = iterations_df["operation_finish_date_sap_upd"].dt.strftime("%d.%m.%Y")
+    except Exception as e:
+      print(e)
+    try:
+      iterations_df["operation_finish_date_update_iteration"] = pd.to_datetime(iterations_df["operation_finish_date_update_iteration"])
+      iterations_df["operation_finish_date_update_iteration"] = iterations_df["operation_finish_date_update_iteration"].dt.date
+      iterations_df_temp = iterations_df.loc[iterations_df["operation_finish_date_update_iteration"]==date_time_plug.date()]
+      indexes = list(iterations_df_temp.index.values)
+      iterations_df.loc[indexes, ['operation_finish_date_update_iteration']] = ""
+      iterations_df["operation_finish_date_update_iteration"] = pd.to_datetime(iterations_df["operation_finish_date_update_iteration"])
+      iterations_df["operation_finish_date_update_iteration"] = iterations_df["operation_finish_date_update_iteration"].dt.strftime("%d.%m.%Y")
+    except Exception as e:
+      print(e)  
+
+    try:
+      iterations_df["operation_finish_date"] = pd.to_datetime(iterations_df["operation_finish_date"])
+      iterations_df["operation_finish_date"] = iterations_df["operation_finish_date"].dt.strftime("%d.%m.%Y")
+    except Exception as e:
+      print(e)
+
+    try:
+      iterations_df["conservation_start_date"] = pd.to_datetime(iterations_df["conservation_start_date"])
+      iterations_df["conservation_start_date"] = iterations_df["conservation_start_date"].dt.strftime("%d.%m.%Y")
+    except Exception as e:
+      print(e)
+    
+    
+    iterations_df = iterations_df.rename(columns=master_data_to_ru_columns)
     iterations_df.to_csv('temp_data/iterations_df.csv')
         
         

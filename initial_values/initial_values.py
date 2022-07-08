@@ -2,6 +2,33 @@ sap_columns_to_master_columns = {'Планирующий завод':'be_code', 
 
 be_data_columns_to_master_columns = {"№пп": "be_eo_data_row_no"," ЕО SAP":"eo_code", "ЕО SAP": "eo_code", "Гаражный №": "gar_no", 'Дата ввода в экспл.(полностью включая день) ': 'reported_operation_start_date', 'Дата ввода в экспл': 'reported_operation_start_date', 'Плановая дата вывода из эксплуат': 'reported_operation_finish_date', 'Статус эксплуатации': 'operation_status', 'Дата статуса эксплуатации': 'operation_status_date', 'Удаление записи':'delete_eo_record', "Дата консервации":"conservation_start_date"}
 
+master_data_to_ru_columns = {
+  "eo_code":"Единица оборудования",
+  'be_code':'Планирующий завод',
+  "be_description":"Бизнес единица",
+  "gar_no":"Гаражный №", 
+  "eo_class_code":"Код класса ЕО",
+  "eo_class_description":"Класс ЕО",
+  "eo_category_spec":"Категория ЕО",
+  "eo_model_name":"Модель",
+  "eo_description":"Описание ЕО",
+  "sap_user_status":"SAP Пользовательский статус",
+  "sap_system_status":"SAP Системный статус",
+  "operation_start_date":"Дата начала эксплуатации",
+  "expected_operation_period_years":"Нормативный срок службы",
+  "operation_finish_date_calc":"Расчетная дата завершения эксплуатации",
+  "sap_planned_finish_operation_date":"Дата завершения эксплуатации в САП",
+  "operation_finish_date_sap_upd":"Дата завершения эксплуатации САП приведенная",
+  "operation_finish_date_update_iteration":"Дата завершения эксплуатации в файле",
+  "operation_finish_date":"Дата завершения эксплуатации",
+  "operation_status_from_file":"Статус эксплуатации в файле",
+  "conservation_start_date":"Дата начала консервации",
+  "iteration_name":"Итерация продления",
+  "year":"Год",
+  "operation_status":"Статус эксплуатации",
+  "qty":"Количество"
+}
+
 sap_system_status_ban_list = ['МТКУ НЕАК УСТН', 'МТКУ ПВЕО', 'МТКУ УСТН']
 sap_user_status_ban_list = ['КОНС СИНХ', 'КОНС', 'ВРНД НПВЭ СИНХ']
 sap_user_status_cons_status_list = ['КОНС СИНХ', 'КОНС']
